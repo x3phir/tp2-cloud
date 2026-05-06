@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USER = 'your_dockerhub_username' // Change this
-        DOCKER_HUB_REPO_BACKEND = 'tp2-backend'
-        DOCKER_HUB_REPO_FRONTEND = 'tp2-frontend'
+        DOCKER_HUB_USER = 'harrskrt' // Change this
+        DOCKER_HUB_REPO_BACKEND = 'tp2-backend:latest'
+        DOCKER_HUB_REPO_FRONTEND = 'tp2-frontend:latest'
         KUBECONFIG_CREDENTIAL_ID = 'aks-kubeconfig'
     }
 

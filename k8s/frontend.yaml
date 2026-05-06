@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: <DOCKER_HUB_USERNAME>/tp2-frontend:latest
+        image: harrskrt/tp2-frontend:latest
         ports:
         - containerPort: 80
 ---
