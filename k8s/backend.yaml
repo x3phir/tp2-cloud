@@ -22,7 +22,7 @@ spec:
         - name: NAMA_PRAKTIKAN
           value: "Harri Supriadi"
         - name: NIM_PRAKTIKAN
-          value: "12345678"
+          value: "2405547"
 ---
 apiVersion: v1
 kind: Service
