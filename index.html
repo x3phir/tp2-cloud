@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Virtual Armory 🎮</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>🎮 Virtual Armory</h1>
+    <p>Game Item &amp; Weapon Loadout Catalog</p>
+  </header>
+
+  <!-- Identity Card -->
+  <div class="card">
+    <h2>👤 Identitas Pemilik</h2>
+    <div class="identity-row">
+      <span>Katalog</span>
+      <span id="judul">—</span>
+    </div>
+    <div class="identity-row">
+      <span>Nama Praktikan</span>
+      <span id="nama">—</span>
+    </div>
+    <div class="identity-row">
+      <span>NIM</span>
+      <span id="nim">—</span>
+    </div>
+  </div>
+
+  <!-- Item List Card -->
+  <div class="card">
+    <h2>🗡️ Daftar Item</h2>
+    <ul class="item-list" id="item-list">
+      <li style="color:#475569">Memuat data…</li>
+    </ul>
+  </div>
+
+  <!-- Add Item Card -->
+  <div class="card">
+    <h2>➕ Tambah Item</h2>
+    <div class="add-form">
+      <input type="text" id="new-item" placeholder="Contoh: Glock-18 | Water Elemental"/>
+      <button onclick="addItem()">Tambah</button>
+    </div>
+    <p id="status-msg"></p>
+  </div>
+
+  <footer>Cloud Containerization Praktikum — Azure ACI</footer>
+
+  <script src="index.js"></script>
+
+</body>
+</html>
