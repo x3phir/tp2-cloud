@@ -1,61 +1,87 @@
 pipeline {
     agent any
-
+    
     environment {
-        DOCKER_HUB_USER = 'harrskrt' // Change this
-        DOCKER_HUB_REPO_BACKEND = 'tp2-backend:latest'
-        DOCKER_HUB_REPO_FRONTEND = 'tp2-frontend:latest'
-        KUBECONFIG_CREDENTIAL_ID = 'aks-kubeconfig'
+        DOCKERHUB_USER = 'harrskrt'  // Ganti dengan username DockerHub Anda
+        BACKEND_IMAGE = "${DOCKERHUB_USER}/tp2-backend"
+        FRONTEND_IMAGE = "${DOCKERHUB_USER}/tp2-frontend"
+        BUILD_NUMBER = "${env.BUILD_NUMBER}"
     }
-
+    
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-
+        
         stage('Build & Push Backend') {
             steps {
                 script {
-                    bat "docker build -t ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_BACKEND}:latest -f Dockerfile.backend ."
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                        bat "echo $PASS | docker login -u $USER --password-stdin"
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-login',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        bat """
+                            echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+                            docker build -t ${BACKEND_IMAGE}:${BUILD_NUMBER} -f Dockerfile.backend .
+                            docker tag ${BACKEND_IMAGE}:${BUILD_NUMBER} ${BACKEND_IMAGE}:latest
+                            docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}
+                            docker push ${BACKEND_IMAGE}:latest
+                            echo "Backend image pushed successfully"
+                        """
                     }
-                    bat "docker push ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_BACKEND}:latest"
                 }
             }
         }
-
+        
         stage('Build & Push Frontend') {
             steps {
                 script {
-                    bat "docker build -t ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_FRONTEND}:latest -f Dockerfile.frontend ."
-                    bat "docker push ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_FRONTEND}:latest"
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-login',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        bat """
+                            docker build -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} -f Dockerfile.frontend .
+                            docker tag ${FRONTEND_IMAGE}:${BUILD_NUMBER} ${FRONTEND_IMAGE}:latest
+                            docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}
+                            docker push ${FRONTEND_IMAGE}:latest
+                            echo "Frontend image pushed successfully"
+                        """
+                    }
                 }
             }
         }
-
+        
         stage('Deploy to AKS') {
             steps {
-                script {
-                    configFileProvider([configFile(fileId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
-                        bat "kubectl --kubeconfig=$KUBECONFIG apply -f k8s/backend.yaml"
-                        bat "kubectl --kubeconfig=$KUBECONFIG apply -f k8s/frontend.yaml"
-                        bat "kubectl --kubeconfig=$KUBECONFIG apply -f k8s/ingress.yaml"
-                        
-                        // Force rollout to pick up new images if they were already 'latest'
-                        bat "kubectl --kubeconfig=$KUBECONFIG rollout restart deployment/backend"
-                        bat "kubectl --kubeconfig=$KUBECONFIG rollout restart deployment/frontend"
-                    }
+                withCredentials([file(credentialsId: 'aks-config', variable: 'KUBECONFIG')]) {
+                    bat """
+                        echo "Deploying to AKS..."
+                        kubectl apply -f k8s/namespace.yaml
+                        kubectl set image deployment/backend-deployment backend=${BACKEND_IMAGE}:${BUILD_NUMBER} -n kantin
+                        kubectl set image deployment/frontend-deployment frontend=${FRONTEND_IMAGE}:${BUILD_NUMBER} -n kantin
+                        kubectl rollout status deployment/backend-deployment -n kantin
+                        kubectl rollout status deployment/frontend-deployment -n kantin
+                    """
                 }
             }
         }
     }
-
+    
     post {
         always {
-            bat "docker logout"
+            bat 'docker logout'
+        }
+        success {
+            echo 'Pipeline executed successfully!'
+            bat 'echo "Deployment completed to AKS"'
+        }
+        failure {
+            echo 'Pipeline failed. Check logs above.'
         }
     }
 }
