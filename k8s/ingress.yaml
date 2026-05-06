@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: main-ingress
+  name: kantin-ingress
   namespace: kantin
   annotations:
     kubernetes.io/ingress.class: nginx
@@ -15,7 +15,7 @@ spec:
           service:
             name: backend-service
             port:
-              number: 80
+              number: 5000      # ← Harus 5000, sesuai service backend
       - path: /
         pathType: Prefix
         backend:

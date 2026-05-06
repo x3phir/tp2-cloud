@@ -57,19 +57,32 @@ pipeline {
         }
         
         stage('Deploy to AKS') {
-            steps {
-                withCredentials([file(credentialsId: 'aks-config', variable: 'KUBECONFIG')]) {
-                    bat """
-                        echo "Deploying to AKS..."
-                        kubectl apply -f k8s/namespace.yaml
-                        kubectl set image deployment/backend-deployment backend=${BACKEND_IMAGE}:${BUILD_NUMBER} -n kantin
-                        kubectl set image deployment/frontend-deployment frontend=${FRONTEND_IMAGE}:${BUILD_NUMBER} -n kantin
-                        kubectl rollout status deployment/backend-deployment -n kantin
-                        kubectl rollout status deployment/frontend-deployment -n kantin
-                    """
-                }
-            }
+    steps {
+        withCredentials([file(credentialsId: 'aks-config', variable: 'KUBECONFIG')]) {
+            bat """
+                echo "Deploying to AKS..."
+                
+                # Apply all manifests
+                kubectl apply -f k8s/namespace.yaml
+                kubectl apply -f k8s/backend.yaml
+                kubectl apply -f k8s/frontend.yaml
+                kubectl apply -f k8s/ingress.yaml
+                
+                # Update images with current build number
+                kubectl set image deployment/backend-deployment backend=${BACKEND_IMAGE}:${BUILD_NUMBER} -n kantin
+                kubectl set image deployment/frontend-deployment frontend=${FRONTEND_IMAGE}:${BUILD_NUMBER} -n kantin
+                
+                # Wait for rollout
+                kubectl rollout status deployment/backend-deployment -n kantin --timeout=5m
+                kubectl rollout status deployment/frontend-deployment -n kantin --timeout=5m
+                
+                # Show status
+                kubectl get all -n kantin
+                kubectl get ingress -n kantin
+            """
         }
+    }
+}
     }
     
     post {
