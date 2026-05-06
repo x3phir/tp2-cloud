@@ -18,11 +18,11 @@ pipeline {
         stage('Build & Push Backend') {
             steps {
                 script {
-                    sh "docker build -t ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_BACKEND}:latest -f Dockerfile.backend ."
+                    bat "docker build -t ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_BACKEND}:latest -f Dockerfile.backend ."
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                        sh "echo $PASS | docker login -u $USER --password-stdin"
+                        bat "echo $PASS | docker login -u $USER --password-stdin"
                     }
-                    sh "docker push ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_BACKEND}:latest"
+                    bat "docker push ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_BACKEND}:latest"
                 }
             }
         }
@@ -30,8 +30,8 @@ pipeline {
         stage('Build & Push Frontend') {
             steps {
                 script {
-                    sh "docker build -t ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_FRONTEND}:latest -f Dockerfile.frontend ."
-                    sh "docker push ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_FRONTEND}:latest"
+                    bat "docker build -t ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_FRONTEND}:latest -f Dockerfile.frontend ."
+                    bat "docker push ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO_FRONTEND}:latest"
                 }
             }
         }
@@ -40,13 +40,13 @@ pipeline {
             steps {
                 script {
                     configFileProvider([configFile(fileId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
-                        sh "kubectl --kubeconfig=$KUBECONFIG apply -f k8s/backend.yaml"
-                        sh "kubectl --kubeconfig=$KUBECONFIG apply -f k8s/frontend.yaml"
-                        sh "kubectl --kubeconfig=$KUBECONFIG apply -f k8s/ingress.yaml"
+                        bat "kubectl --kubeconfig=$KUBECONFIG apply -f k8s/backend.yaml"
+                        bat "kubectl --kubeconfig=$KUBECONFIG apply -f k8s/frontend.yaml"
+                        bat "kubectl --kubeconfig=$KUBECONFIG apply -f k8s/ingress.yaml"
                         
                         // Force rollout to pick up new images if they were already 'latest'
-                        sh "kubectl --kubeconfig=$KUBECONFIG rollout restart deployment/backend"
-                        sh "kubectl --kubeconfig=$KUBECONFIG rollout restart deployment/frontend"
+                        bat "kubectl --kubeconfig=$KUBECONFIG rollout restart deployment/backend"
+                        bat "kubectl --kubeconfig=$KUBECONFIG rollout restart deployment/frontend"
                     }
                 }
             }
@@ -55,7 +55,7 @@ pipeline {
 
     post {
         always {
-            sh "docker logout"
+            bat "docker logout"
         }
     }
 }
